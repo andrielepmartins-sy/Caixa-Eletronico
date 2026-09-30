@@ -1,4 +1,7 @@
 import os
+import tkinter as tk
+from tkinter import messagebox, simpledialog
+
 
 ARQUIVO = "contas.txt"
 SALDO_INICIAL = 1000
@@ -16,7 +19,6 @@ def carregar_saldo(conta):
             if len(dados) == 2 and dados[0] == conta:
                 return int(dados[1])
 
-    # Se a conta ainda não existe, começa com R$ 1.000,00
     return SALDO_INICIAL
 
 
@@ -39,35 +41,8 @@ def salvar_saldo(conta, saldo):
             arquivo.write(f"{numero_conta};{valor}\n")
 
 
-def pausar():
-    input("\nPressione ENTER para retornar ao menu...")
-
-
-def ler_valor(mensagem):
-    """Lê somente valores inteiros e impede valores negativos."""
-    valor = input(mensagem).strip()
-
-    if valor == "":
-        print("Erro: digite um valor.")
-        return None
-
-    # Impede valores como 250.75
-    if not valor.isdigit():
-        print("Erro: valores fracionários ou inválidos não são aceitos.")
-        print("Digite um valor inteiro, sem ponto ou vírgula.")
-        return None
-
-    valor = int(valor)
-
-    if valor < 0:
-        print("Erro: valores negativos não são permitidos.")
-        return None
-
-    return valor
-
-
 def calcular_cedulas(valor):
-    """Calcula a quantidade de cada cédula necessária para o saque."""
+    """Calcula as cédulas necessárias para o saque."""
     cedulas = [100, 50, 20, 10, 5, 2]
     resultado = {}
 
@@ -80,7 +55,6 @@ def calcular_cedulas(valor):
         if quantidade > 0:
             resultado[cedula] = quantidade
 
-    # Se sobrou algum valor, o caixa não consegue montar o saque.
     if restante != 0:
         return None
 
@@ -88,109 +62,262 @@ def calcular_cedulas(valor):
 
 
 def mostrar_cedulas(cedulas):
-    print("\nEntregar:")
+    """Monta o texto mostrando as cédulas."""
+    texto = "Cédulas entregues:\n\n"
 
     for valor, quantidade in cedulas.items():
+
         if quantidade == 1:
-            print(f"1 cédula de R${valor}")
+            texto += f"1 cédula de R$ {valor}\n"
         else:
-            print(f"{quantidade} cédulas de R${valor}")
+            texto += f"{quantidade} cédulas de R$ {valor}\n"
+
+    return texto
 
 
-def main():
-    print("=" * 40)
-    print("      BEM-VINDO AO CAIXA ELETRÔNICO")
-    print("=" * 40)
+# --------------------------------------------------
+# INTERFACE
+# --------------------------------------------------
 
-    conta = input("Digite sua conta: ").strip()
-    senha = input("Digite sua senha: ").strip()
+janela = tk.Tk()
+janela.title("Caixa Eletrônico")
+janela.geometry("500x500")
+janela.resizable(False, False)
 
-    # A senha é apenas solicitada, conforme o enunciado.
-    saldo = carregar_saldo(conta)
-
-    print("\nAcesso realizado com sucesso!")
-
-    while True:
-        print("\n" + "=" * 40)
-        print("MENU")
-        print("1 - Consultar saldo")
-        print("2 - Sacar")
-        print("3 - Depositar")
-        print("4 - Sair")
-        print("=" * 40)
-
-        opcao = input("Escolha uma opção: ").strip()
-
-        if opcao == "1":
-            print(f"\nSeu saldo atual é: R$ {saldo},00")
-            pausar()
-
-        elif opcao == "2":
-            valor = ler_valor("\nDigite o valor para saque: R$ ")
-
-            if valor is None:
-                pausar()
-                continue
-
-            if valor == 0:
-                print("Erro: o valor do saque deve ser maior que zero.")
-                pausar()
-                continue
-
-            if valor > saldo:
-                print("Erro: saldo insuficiente.")
-                pausar()
-                continue
-
-            cedulas = calcular_cedulas(valor)
-
-            if cedulas is None:
-                print("Erro: o caixa não possui cédulas para formar esse valor.")
-                print("Cédulas disponíveis: R$100, R$50, R$20, R$10, R$5 e R$2.")
-                pausar()
-                continue
-
-            saldo -= valor
-
-            print("\nSaque realizado com sucesso.")
-            mostrar_cedulas(cedulas)
-            print(f"Saldo atual: R$ {saldo},00")
-            pausar()
-
-        elif opcao == "3":
-            valor = ler_valor("\nDigite o valor para depósito: R$ ")
-
-            if valor is None:
-                pausar()
-                continue
-
-            if valor == 0:
-                print("Erro: o valor do depósito deve ser maior que zero.")
-                pausar()
-                continue
-
-            saldo += valor
-
-            print("Depósito realizado com sucesso!")
-            print(f"Saldo atual: R$ {saldo},00")
-            pausar()
-
-        elif opcao == "4":
-            salvar_saldo(conta, saldo)
-
-            print("\n" + "=" * 40)
-            print("Obrigado por usar nosso sistema!")
-            print("Saldo salvo com sucesso.")
-            print("Retornando para a tela de conta e senha.")
-            print("=" * 40)
-
-            break
-
-        else:
-            print("\nOpção inválida!")
-            print("Por favor, escolha uma opção de 1 a 4.")
-            pausar()
+conta = ""
+senha = ""
+saldo = 0
 
 
-if __name__ == "__main__":
-    main()
+def limpar_tela():
+    """Apaga todos os componentes da tela."""
+    for widget in janela.winfo_children():
+        widget.destroy()
+
+
+def tela_login():
+    """Mostra a tela de login."""
+    limpar_tela()
+
+    titulo = tk.Label(
+        janela,
+        text="CAIXA ELETRÔNICO",
+        font=("Arial", 24, "bold")
+    )
+    titulo.pack(pady=30)
+
+    subtitulo = tk.Label(
+        janela,
+        text="Informe seus dados para acessar",
+        font=("Arial", 12)
+    )
+    subtitulo.pack(pady=5)
+
+    tk.Label(
+        janela,
+        text="Número da conta:"
+    ).pack(pady=(30, 5))
+
+    entrada_conta = tk.Entry(
+        janela,
+        width=30
+    )
+    entrada_conta.pack()
+
+    tk.Label(
+        janela,
+        text="Senha:"
+    ).pack(pady=(20, 5))
+
+    entrada_senha = tk.Entry(
+        janela,
+        width=30,
+        show="*"
+    )
+    entrada_senha.pack()
+
+    def entrar():
+        global conta, senha, saldo
+
+        conta_digitada = entrada_conta.get().strip()
+        senha_digitada = entrada_senha.get().strip()
+
+        if conta_digitada == "":
+            messagebox.showerror(
+                "Erro",
+                "Digite o número da conta."
+            )
+            return
+
+        if senha_digitada == "":
+            messagebox.showerror(
+                "Erro",
+                "Digite a senha."
+            )
+            return
+
+        conta = conta_digitada
+        senha = senha_digitada
+
+        saldo = carregar_saldo(conta)
+
+        tela_menu()
+
+    botao = tk.Button(
+        janela,
+        text="ENTRAR",
+        width=20,
+        command=entrar
+    )
+    botao.pack(pady=30)
+
+
+def tela_menu():
+    """Mostra o menu principal."""
+    limpar_tela()
+
+    tk.Label(
+        janela,
+        text="CAIXA ELETRÔNICO",
+        font=("Arial", 22, "bold")
+    ).pack(pady=25)
+
+    tk.Label(
+        janela,
+        text=f"Conta: {conta}",
+        font=("Arial", 12)
+    ).pack(pady=5)
+
+    tk.Label(
+        janela,
+        text="Escolha uma opção",
+        font=("Arial", 14)
+    ).pack(pady=20)
+
+    tk.Button(
+        janela,
+        text="CONSULTAR SALDO",
+        width=25,
+        height=2,
+        command=consultar_saldo
+    ).pack(pady=5)
+
+    tk.Button(
+        janela,
+        text="SACAR",
+        width=25,
+        height=2,
+        command=sacar
+    ).pack(pady=5)
+
+    tk.Button(
+        janela,
+        text="DEPOSITAR",
+        width=25,
+        height=2,
+        command=depositar
+    ).pack(pady=5)
+
+    tk.Button(
+        janela,
+        text="SAIR",
+        width=25,
+        height=2,
+        command=sair
+    ).pack(pady=20)
+
+
+def consultar_saldo():
+    """Mostra o saldo atual."""
+    messagebox.showinfo(
+        "Saldo",
+        f"Seu saldo atual é:\n\nR$ {saldo},00"
+    )
+
+
+def sacar():
+    """Realiza um saque."""
+    global saldo
+
+    valor = simpledialog.askinteger(
+        "Saque",
+        "Digite o valor para saque:",
+        parent=janela,
+        minvalue=1
+    )
+
+    if valor is None:
+        return
+
+    if valor > saldo:
+        messagebox.showerror(
+            "Erro",
+            "Saldo insuficiente."
+        )
+        return
+
+    cedulas = calcular_cedulas(valor)
+
+    if cedulas is None:
+        messagebox.showerror(
+            "Erro",
+            "O caixa não possui cédulas para formar esse valor.\n\n"
+            "Cédulas disponíveis:\n"
+            "R$ 100, R$ 50, R$ 20, R$ 10, R$ 5 e R$ 2."
+        )
+        return
+
+    saldo -= valor
+
+    texto = mostrar_cedulas(cedulas)
+
+    texto += f"\nSaldo atual: R$ {saldo},00"
+
+    messagebox.showinfo(
+        "Saque realizado",
+        texto
+    )
+
+
+def depositar():
+    """Realiza um depósito."""
+    global saldo
+
+    valor = simpledialog.askinteger(
+        "Depósito",
+        "Digite o valor para depósito:",
+        parent=janela,
+        minvalue=1
+    )
+
+    if valor is None:
+        return
+
+    saldo += valor
+
+    messagebox.showinfo(
+        "Depósito realizado",
+        f"Depósito realizado com sucesso!\n\n"
+        f"Saldo atual: R$ {saldo},00"
+    )
+
+
+def sair():
+    """Salva o saldo e volta para a tela de login."""
+    salvar_saldo(conta, saldo)
+
+    resposta = messagebox.askyesno(
+        "Sair",
+        "Saldo salvo com sucesso.\n\n"
+        "Deseja fechar o programa?"
+    )
+
+    if resposta:
+        janela.destroy()
+    else:
+        tela_login()
+
+
+tela_login()
+
+janela.mainloop()
