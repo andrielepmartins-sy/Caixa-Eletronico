@@ -1,152 +1,153 @@
-import os
 import tkinter as tk
-from tkinter import messagebox, simpledialog
+from tkinter import messagebox
+import os
 
-
-# ==========================================
-# CONFIGURAÇÕES
-# ==========================================
-
+# Arquivo onde os saldos serão salvos
 ARQUIVO = "contas.txt"
+
+# Saldo inicial para contas novas
 SALDO_INICIAL = 1000
 
-
-# ==========================================
-# CORES
-# ==========================================
-
-FUNDO = "#05090D"
-PAINEL = "#0A1118"
-PAINEL_2 = "#101B24"
-BORDA = "#18313B"
-
-VERDE = "#00F5A0"
-VERDE_ESCURO = "#00B87A"
-CIANO = "#00D9FF"
-
-BRANCO = "#EFFFFA"
-CINZA = "#70818D"
-CINZA_CLARO = "#B8C8CF"
-
-VERMELHO = "#FF4567"
+# Cédulas disponíveis no caixa
+CEDULAS = [100, 50, 20, 10, 5, 2]
 
 
-# ==========================================
-# VARIÁVEIS
-# ==========================================
+# Cores do sistema
+FUNDO = "#0D0914"
+CARD = "#171020"
+CARD_2 = "#21152E"
 
-conta = ""
-senha = ""
+ROXO = "#9B5DE5"
+ROXO_CLARO = "#B87CFF"
+ROXO_ESCURO = "#6A35A8"
+
+BRANCO = "#F5F0FA"
+CINZA = "#9B91A8"
+VERMELHO = "#FF5577"
+
+
+# Variáveis da conta atual
+conta_atual = ""
 saldo = 0
 
 
-# ==========================================
-# ARQUIVO
-# ==========================================
+# ---------------------------------------------------------
+# CARREGAR SALDO
+# ---------------------------------------------------------
 
 def carregar_saldo(conta):
+    """Busca o saldo da conta no arquivo."""
 
     if not os.path.exists(ARQUIVO):
         return SALDO_INICIAL
 
-    with open(ARQUIVO, "r", encoding="utf-8") as arquivo:
+    arquivo = open(ARQUIVO, "r", encoding="utf-8")
 
-        for linha in arquivo:
+    for linha in arquivo:
+        linha = linha.strip()
 
-            dados = linha.strip().split(";")
+        if linha != "":
+            dados = linha.split(";")
 
             if len(dados) == 2 and dados[0] == conta:
+                arquivo.close()
                 return int(dados[1])
+
+    arquivo.close()
 
     return SALDO_INICIAL
 
 
-def salvar_saldo(conta, saldo):
+# ---------------------------------------------------------
+# SALVAR SALDO
+# ---------------------------------------------------------
 
-    contas = {}
+def salvar_saldo(conta, novo_saldo):
+    """Salva o saldo da conta no arquivo."""
+
+    contas = []
 
     if os.path.exists(ARQUIVO):
+        arquivo = open(ARQUIVO, "r", encoding="utf-8")
 
-        with open(ARQUIVO, "r", encoding="utf-8") as arquivo:
+        for linha in arquivo:
+            linha = linha.strip()
 
-            for linha in arquivo:
-
-                dados = linha.strip().split(";")
+            if linha != "":
+                dados = linha.split(";")
 
                 if len(dados) == 2:
-                    contas[dados[0]] = int(dados[1])
 
-    contas[conta] = saldo
+                    if dados[0] == conta:
+                        contas.append(
+                            conta + ";" + str(novo_saldo)
+                        )
+                    else:
+                        contas.append(
+                            dados[0] + ";" + dados[1]
+                        )
 
-    with open(ARQUIVO, "w", encoding="utf-8") as arquivo:
+        arquivo.close()
 
-        for numero_conta, valor in contas.items():
+    conta_encontrada = False
 
-            arquivo.write(
-                f"{numero_conta};{valor}\n"
-            )
+    for linha in contas:
+        dados = linha.split(";")
+
+        if dados[0] == conta:
+            conta_encontrada = True
+            break
+
+    if not conta_encontrada:
+        contas.append(
+            conta + ";" + str(novo_saldo)
+        )
+
+    arquivo = open(ARQUIVO, "w", encoding="utf-8")
+
+    for linha in contas:
+        arquivo.write(linha + "\n")
+
+    arquivo.close()
 
 
-# ==========================================
-# CÉDULAS
-# ==========================================
+# ---------------------------------------------------------
+# CALCULAR CÉDULAS
+# ---------------------------------------------------------
 
 def calcular_cedulas(valor):
 
-    cedulas = [100, 50, 20, 10, 5, 2]
+    cedulas_entregues = {}
 
-    resultado = {}
+    valor_restante = valor
 
-    restante = valor
+    indice = 0
 
-    for cedula in cedulas:
+    while valor_restante > 0 and indice < len(CEDULAS):
 
-        quantidade = restante // cedula
+        cedula = CEDULAS[indice]
 
-        restante = restante % cedula
+        quantidade = valor_restante // cedula
 
         if quantidade > 0:
-            resultado[cedula] = quantidade
 
-    if restante != 0:
+            cedulas_entregues[cedula] = quantidade
+
+            valor_restante = valor_restante % cedula
+
+        indice += 1
+
+    # Se sobrou algum valor,
+    # significa que o caixa não consegue formar o valor.
+    if valor_restante != 0:
         return None
 
-    return resultado
+    return cedulas_entregues
 
 
-def mostrar_cedulas(cedulas):
-
-    texto = ""
-
-    for valor, quantidade in cedulas.items():
-
-        if quantidade == 1:
-            texto += f"1 cédula de R$ {valor}\n"
-
-        else:
-            texto += f"{quantidade} cédulas de R$ {valor}\n"
-
-    return texto
-
-
-# ==========================================
-# JANELA
-# ==========================================
-
-janela = tk.Tk()
-
-janela.title("ATM // FUTURE BANK")
-janela.geometry("950x620")
-janela.resizable(False, False)
-
-janela.configure(
-    bg=FUNDO
-)
-
-
-# ==========================================
-# FUNÇÕES VISUAIS
-# ==========================================
+# ---------------------------------------------------------
+# FUNÇÕES DA INTERFACE
+# ---------------------------------------------------------
 
 def limpar_tela():
 
@@ -154,489 +155,260 @@ def limpar_tela():
         widget.destroy()
 
 
-def linha_tecnologica(pai):
+def criar_botao(pai, texto, comando, largura=20):
 
-    linha = tk.Frame(
+    return tk.Button(
         pai,
-        bg=VERDE,
-        height=1
-    )
-
-    linha.pack(
-        fill="x"
-    )
-
-    return linha
-
-
-def botao_menu(
-    pai,
-    texto,
-    comando,
-    cor=PAINEL_2
-):
-
-    botao = tk.Button(
-
-        pai,
-
         text=texto,
-
         command=comando,
-
-        font=(
-            "Consolas",
-            10,
-            "bold"
-        ),
-
+        width=largura,
+        height=2,
+        bg=CARD_2,
         fg=BRANCO,
-
-        bg=cor,
-
-        activebackground=VERDE,
-
-        activeforeground=FUNDO,
-
+        activebackground=ROXO_ESCURO,
+        activeforeground=BRANCO,
         relief="flat",
-
         bd=0,
-
         cursor="hand2",
-
-        anchor="w",
-
-        padx=20,
-
-        height=2
+        font=("Arial", 10, "bold")
     )
 
-    def entrar(event):
 
-        botao.config(
-            bg=VERDE,
-            fg=FUNDO
-        )
+def criar_entrada(pai, largura=30):
 
-    def sair(event):
-
-        botao.config(
-            bg=cor,
-            fg=BRANCO
-        )
-
-    botao.bind(
-        "<Enter>",
-        entrar
+    return tk.Entry(
+        pai,
+        width=largura,
+        bg=CARD_2,
+        fg=BRANCO,
+        insertbackground=ROXO_CLARO,
+        relief="flat",
+        bd=0,
+        font=("Arial", 12)
     )
 
-    botao.bind(
-        "<Leave>",
-        sair
-    )
 
-    return botao
-
-
-# ==========================================
+# ---------------------------------------------------------
 # LOGIN
-# ==========================================
+
+def entrar():
+
+    global conta_atual
+    global saldo
+
+    conta = entrada_conta.get().strip()
+    senha = entrada_senha.get().strip()
+
+    if conta == "":
+        messagebox.showerror(
+            "Erro",
+            "Digite sua conta."
+        )
+        return
+
+    if senha == "":
+        messagebox.showerror(
+            "Erro",
+            "Digite sua senha."
+        )
+        return
+
+    # A senha não precisa ser validada,
+    # conforme o enunciado do trabalho.
+
+    conta_atual = conta
+
+    saldo = carregar_saldo(conta_atual)
+
+    tela_menu()
+
+
+# ---------------------------------------------------------
+# TELA DE LOGIN
 
 def tela_login():
 
+    global entrada_conta
+    global entrada_senha
+
     limpar_tela()
 
-    # --------------------------------------
-    # HEADER
-    # --------------------------------------
-
-    topo = tk.Frame(
+    fundo = tk.Frame(
         janela,
-        bg=PAINEL,
-        height=72
+        bg=FUNDO
     )
 
-    topo.pack(
-        fill="x"
+    fundo.pack(
+        fill="both",
+        expand=True
     )
 
     tk.Label(
-        topo,
-        text="ATM",
-        font=(
-            "Consolas",
-            24,
-            "bold"
-        ),
-        fg=VERDE,
-        bg=PAINEL
+        fundo,
+        text="MIT",
+        bg=FUNDO,
+        fg=ROXO_CLARO,
+        font=("Arial", 46, "bold")
     ).pack(
-        side="left",
-        padx=30
+        pady=(65, 0)
     )
 
     tk.Label(
-        topo,
-        text="// FUTURE BANK SYSTEM",
-        font=(
-            "Consolas",
-            10,
-            "bold"
-        ),
+        fundo,
+        text="• MIT SYSTEM •",
+        bg=FUNDO,
         fg=CINZA,
-        bg=PAINEL
+        font=("Arial", 10, "bold")
     ).pack(
-        side="left"
+        pady=(0, 25)
     )
+
+    card = tk.Frame(
+        fundo,
+        bg=CARD,
+        width=420,
+        height=290
+    )
+
+    card.pack()
+
+    card.pack_propagate(False)
 
     tk.Label(
-        topo,
-        text="● SYSTEM ONLINE",
-        font=(
-            "Consolas",
-            9,
-            "bold"
-        ),
-        fg=VERDE,
-        bg=PAINEL
-    ).pack(
-        side="right",
-        padx=30
-    )
-
-    # Linha
-    tk.Frame(
-        janela,
-        bg=VERDE,
-        height=2
-    ).pack(
-        fill="x"
-    )
-
-    # --------------------------------------
-    # ÁREA CENTRAL
-    # --------------------------------------
-
-    centro = tk.Frame(
-        janela,
-        bg=FUNDO
-    )
-
-    centro.place(
-        relx=0.5,
-        rely=0.53,
-        anchor="center"
-    )
-
-    tk.Label(
-        centro,
-        text="ACCESS TERMINAL",
-        font=(
-            "Consolas",
-            25,
-            "bold"
-        ),
+        card,
+        text="Acessar sistema",
+        bg=CARD,
         fg=BRANCO,
-        bg=FUNDO
-    ).pack()
+        font=("Arial", 19, "bold")
+    ).pack(
+        pady=(25, 20)
+    )
 
     tk.Label(
-        centro,
-        text="SECURE BANKING INTERFACE",
-        font=(
-            "Consolas",
-            9
-        ),
-        fg=CIANO,
-        bg=FUNDO
+        card,
+        text="CONTA",
+        bg=CARD,
+        fg=CINZA,
+        font=("Arial", 9, "bold")
     ).pack(
-        pady=(5, 20)
+        anchor="w",
+        padx=55
     )
 
-    # --------------------------------------
-    # CARD
-    # --------------------------------------
-
-    painel = tk.Frame(
-        centro,
-        bg=PAINEL,
-        padx=35,
-        pady=30,
-        highlightbackground=BORDA,
-        highlightthickness=1
-    )
-
-    painel.pack()
-
-    # Pequeno indicador
-    tk.Label(
-        painel,
-        text="[ AUTHENTICATION REQUIRED ]",
-        font=(
-            "Consolas",
-            8,
-            "bold"
-        ),
-        fg=VERDE,
-        bg=PAINEL
-    ).pack(
-        pady=(0, 22)
-    )
-
-    # Conta
-    tk.Label(
-        painel,
-        text="ACCOUNT ID",
-        font=(
-            "Consolas",
-            9,
-            "bold"
-        ),
-        fg=CINZA_CLARO,
-        bg=PAINEL
-    ).pack(
-        anchor="w"
-    )
-
-    entrada_conta = tk.Entry(
-        painel,
-        font=(
-            "Consolas",
-            12
-        ),
-        bg=PAINEL_2,
-        fg=BRANCO,
-        insertbackground=VERDE,
-        relief="flat",
-        width=34
+    entrada_conta = criar_entrada(
+        card,
+        30
     )
 
     entrada_conta.pack(
-        pady=(6, 18),
-        ipady=9
+        pady=(5, 12)
     )
 
-    # Senha
     tk.Label(
-        painel,
-        text="ACCESS CODE",
-        font=(
-            "Consolas",
-            9,
-            "bold"
-        ),
-        fg=CINZA_CLARO,
-        bg=PAINEL
+        card,
+        text="SENHA",
+        bg=CARD,
+        fg=CINZA,
+        font=("Arial", 9, "bold")
     ).pack(
-        anchor="w"
+        anchor="w",
+        padx=55
     )
 
-    entrada_senha = tk.Entry(
-        painel,
-        font=(
-            "Consolas",
-            12
-        ),
-        bg=PAINEL_2,
-        fg=BRANCO,
-        insertbackground=VERDE,
-        relief="flat",
-        show="*",
-        width=34
+    entrada_senha = criar_entrada(
+        card,
+        30
+    )
+
+    entrada_senha.config(
+        show="*"
     )
 
     entrada_senha.pack(
-        pady=(6, 22),
-        ipady=9
+        pady=5
     )
 
-    # --------------------------------------
-    # ENTRAR
-    # --------------------------------------
-
-    def entrar():
-
-        global conta
-        global senha
-        global saldo
-
-        conta_digitada = (
-            entrada_conta
-            .get()
-            .strip()
-        )
-
-        senha_digitada = (
-            entrada_senha
-            .get()
-            .strip()
-        )
-
-        if conta_digitada == "":
-
-            messagebox.showerror(
-                "ACCESS ERROR",
-                "Digite o número da conta."
-            )
-
-            return
-
-        if senha_digitada == "":
-
-            messagebox.showerror(
-                "ACCESS ERROR",
-                "Digite a senha."
-            )
-
-            return
-
-        conta = conta_digitada
-
-        senha = senha_digitada
-
-        saldo = carregar_saldo(
-            conta
-        )
-
-        tela_menu()
-
-    botao = tk.Button(
-        painel,
-        text="[ ENTER SYSTEM ]",
+    tk.Button(
+        card,
+        text="ENTRAR  →",
         command=entrar,
-        font=(
-            "Consolas",
-            10,
-            "bold"
-        ),
-        fg=FUNDO,
-        bg=VERDE,
-        activebackground=VERDE_ESCURO,
-        activeforeground=FUNDO,
+        width=28,
+        height=2,
+        bg=ROXO,
+        fg=BRANCO,
+        activebackground=ROXO_ESCURO,
+        activeforeground=BRANCO,
         relief="flat",
+        bd=0,
         cursor="hand2",
-        width=34,
-        height=2
-    )
-
-    botao.pack()
-
-    def hover_entrar(event):
-
-        botao.config(
-            bg=CIANO
-        )
-
-    def sair_entrar(event):
-
-        botao.config(
-            bg=VERDE
-        )
-
-    botao.bind(
-        "<Enter>",
-        hover_entrar
-    )
-
-    botao.bind(
-        "<Leave>",
-        sair_entrar
-    )
-
-    # Rodapé
-    tk.Label(
-        janela,
-        text="SENAI // BANKING SIMULATION // v1.0",
-        font=(
-            "Consolas",
-            8
-        ),
-        fg=CINZA,
-        bg=FUNDO
+        font=("Arial", 10, "bold")
     ).pack(
-        side="bottom",
-        pady=12
+        pady=18
+    )
+
+    tk.Label(
+        fundo,
+        text="● SYSTEM ONLINE",
+        bg=FUNDO,
+        fg=ROXO_CLARO,
+        font=("Arial", 8, "bold")
+    ).pack(
+        pady=20
     )
 
 
-# ==========================================
-# MENU
-# ==========================================
+# ---------------------------------------------------------
+# MENU PRINCIPAL
 
 def tela_menu():
 
+    global label_saldo
+
     limpar_tela()
 
-    # --------------------------------------
-    # HEADER
-    # --------------------------------------
-
-    topo = tk.Frame(
+    header = tk.Frame(
         janela,
-        bg=PAINEL,
+        bg=CARD,
         height=75
     )
 
-    topo.pack(
+    header.pack(
         fill="x"
     )
 
+    header.pack_propagate(False)
+
     tk.Label(
-        topo,
-        text="ATM",
-        font=(
-            "Consolas",
-            24,
-            "bold"
-        ),
-        fg=VERDE,
-        bg=PAINEL
+        header,
+        text="MIT",
+        bg=CARD,
+        fg=ROXO_CLARO,
+        font=("Arial", 25, "bold")
     ).pack(
         side="left",
-        padx=25
+        padx=30
     )
 
     tk.Label(
-        topo,
-        text="// CONTROL PANEL",
-        font=(
-            "Consolas",
-            10,
-            "bold"
-        ),
+        header,
+        text="ATM SYSTEM / ONLINE",
+        bg=CARD,
         fg=CINZA,
-        bg=PAINEL
+        font=("Arial", 9, "bold")
     ).pack(
         side="left"
     )
 
     tk.Label(
-        topo,
-        text="● ONLINE",
-        font=(
-            "Consolas",
-            9,
-            "bold"
-        ),
-        fg=VERDE,
-        bg=PAINEL
+        header,
+        text="CONTA: " + conta_atual,
+        bg=CARD,
+        fg=BRANCO,
+        font=("Arial", 10, "bold")
     ).pack(
         side="right",
-        padx=25
+        padx=30
     )
-
-    # Linha
-    tk.Frame(
-        janela,
-        bg=VERDE,
-        height=2
-    ).pack(
-        fill="x"
-    )
-
-    # --------------------------------------
-    # CONTEÚDO
-    # --------------------------------------
 
     conteudo = tk.Frame(
         janela,
@@ -646,429 +418,586 @@ def tela_menu():
     conteudo.pack(
         fill="both",
         expand=True,
-        padx=35,
+        padx=40,
+        pady=30
+    )
+
+    tk.Label(
+        conteudo,
+        text="Painel de operações",
+        bg=FUNDO,
+        fg=BRANCO,
+        font=("Arial", 24, "bold")
+    ).pack(
+        anchor="w"
+    )
+
+    tk.Label(
+        conteudo,
+        text="Escolha uma operação para continuar",
+        bg=FUNDO,
+        fg=CINZA,
+        font=("Arial", 10)
+    ).pack(
+        anchor="w",
+        pady=(3, 20)
+    )
+
+    saldo_card = tk.Frame(
+        conteudo,
+        bg=CARD,
+        height=105
+    )
+
+    saldo_card.pack(
+        fill="x"
+    )
+
+    saldo_card.pack_propagate(False)
+
+    tk.Label(
+        saldo_card,
+        text="SALDO DISPONÍVEL",
+        bg=CARD,
+        fg=CINZA,
+        font=("Arial", 9, "bold")
+    ).pack(
+        anchor="w",
+        padx=25,
+        pady=(15, 0)
+    )
+
+    label_saldo = tk.Label(
+        saldo_card,
+        text="R$ {:.2f}".format(
+            saldo
+        ).replace(".", ","),
+        bg=CARD,
+        fg=ROXO_CLARO,
+        font=("Arial", 25, "bold")
+    )
+
+    label_saldo.pack(
+        anchor="w",
+        padx=25
+    )
+
+    operacoes = tk.Frame(
+        conteudo,
+        bg=FUNDO
+    )
+
+    operacoes.pack(
+        fill="x",
         pady=25
     )
 
-    # --------------------------------------
-    # ESQUERDA
-    # --------------------------------------
-
-    esquerda = tk.Frame(
-        conteudo,
-        bg=FUNDO
-    )
-
-    esquerda.pack(
-        side="left",
-        fill="both",
-        expand=True,
-        padx=(0, 18)
-    )
-
-    tk.Label(
-        esquerda,
-        text="SYSTEM OVERVIEW",
-        font=(
-            "Consolas",
-            10,
-            "bold"
-        ),
-        fg=CINZA,
-        bg=FUNDO
-    ).pack(
-        anchor="w"
-    )
-
-    # --------------------------------------
-    # CARD SALDO
-    # --------------------------------------
-
-    cartao = tk.Frame(
-        esquerda,
-        bg=PAINEL,
-        padx=28,
-        pady=25,
-        highlightbackground=BORDA,
-        highlightthickness=1
-    )
-
-    cartao.pack(
-        fill="x",
-        pady=(10, 15)
-    )
-
-    tk.Label(
-        cartao,
-        text="AVAILABLE BALANCE",
-        font=(
-            "Consolas",
-            9,
-            "bold"
-        ),
-        fg=CINZA,
-        bg=PAINEL
-    ).pack(
-        anchor="w"
-    )
-
-    tk.Label(
-        cartao,
-        text=f"R$ {saldo},00",
-        font=(
-            "Consolas",
-            30,
-            "bold"
-        ),
-        fg=VERDE,
-        bg=PAINEL
-    ).pack(
-        anchor="w",
-        pady=8
-    )
-
-    tk.Label(
-        cartao,
-        text="// BALANCE UPDATED",
-        font=(
-            "Consolas",
-            8
-        ),
-        fg=CINZA,
-        bg=PAINEL
-    ).pack(
-        anchor="w"
-    )
-
-    # --------------------------------------
-    # INFORMAÇÕES
-    # --------------------------------------
-
-    informacao = tk.Frame(
-        esquerda,
-        bg=PAINEL,
-        padx=25,
-        pady=20,
-        highlightbackground=BORDA,
-        highlightthickness=1
-    )
-
-    informacao.pack(
-        fill="x"
-    )
-
-    tk.Label(
-        informacao,
-        text="ACCOUNT STATUS",
-        font=(
-            "Consolas",
-            9,
-            "bold"
-        ),
-        fg=CINZA,
-        bg=PAINEL
-    ).pack(
-        anchor="w"
-    )
-
-    tk.Label(
-        informacao,
-        text="●  ACCOUNT ACTIVE",
-        font=(
-            "Consolas",
-            11,
-            "bold"
-        ),
-        fg=VERDE,
-        bg=PAINEL
-    ).pack(
-        anchor="w",
-        pady=(8, 4)
-    )
-
-    tk.Label(
-        informacao,
-        text=f"ID: {conta}",
-        font=(
-            "Consolas",
-            9
-        ),
-        fg=CINZA_CLARO,
-        bg=PAINEL
-    ).pack(
-        anchor="w"
-    )
-
-    # --------------------------------------
-    # DIREITA
-    # --------------------------------------
-
-    direita = tk.Frame(
-        conteudo,
-        bg=FUNDO
-    )
-
-    direita.pack(
-        side="right",
-        fill="both",
-        expand=True
-    )
-
-    tk.Label(
-        direita,
-        text="AVAILABLE OPERATIONS",
-        font=(
-            "Consolas",
-            10,
-            "bold"
-        ),
-        fg=CINZA,
-        bg=FUNDO
-    ).pack(
-        anchor="w"
-    )
-
-    # Botões
-    botao_menu(
-        direita,
-        "▣   CONSULT BALANCE",
+    criar_card_operacao(
+        operacoes,
+        "01",
+        "Consultar saldo",
         consultar_saldo
-    ).pack(
-        fill="x",
-        pady=(10, 6)
     )
 
-    botao_menu(
-        direita,
-        "↓   WITHDRAW MONEY",
-        sacar
-    ).pack(
-        fill="x",
-        pady=6
+    criar_card_operacao(
+        operacoes,
+        "02",
+        "Sacar dinheiro",
+        tela_saque
     )
 
-    botao_menu(
-        direita,
-        "↑   DEPOSIT MONEY",
-        depositar
-    ).pack(
-        fill="x",
-        pady=6
+    criar_card_operacao(
+        operacoes,
+        "03",
+        "Depositar dinheiro",
+        tela_deposito
     )
 
-    # Separador
-    tk.Frame(
-        direita,
-        bg=BORDA,
-        height=1
-    ).pack(
-        fill="x",
-        pady=18
-    )
-
-    # Sair
-    botao_sair = tk.Button(
-        direita,
-        text="[ TERMINATE SESSION ]",
-        font=(
-            "Consolas",
-            10,
-            "bold"
-        ),
-        fg=BRANCO,
-        bg="#251018",
+    tk.Button(
+        conteudo,
+        text="ENCERRAR SESSÃO",
+        command=sair,
+        width=25,
+        height=2,
+        bg=CARD_2,
+        fg=VERMELHO,
         activebackground=VERMELHO,
         activeforeground=BRANCO,
         relief="flat",
+        bd=0,
         cursor="hand2",
-        height=2,
-        command=sair
+        font=("Arial", 9, "bold")
+    ).pack(
+        pady=5
     )
 
-    botao_sair.pack(
-        fill="x"
+
+# ---------------------------------------------------------
+# CARDS DE OPERAÇÃO
+
+def criar_card_operacao(
+    pai,
+    numero,
+    texto,
+    comando
+):
+
+    card = tk.Frame(
+        pai,
+        bg=CARD,
+        width=230,
+        height=115
     )
 
-    def hover_sair(event):
-
-        botao_sair.config(
-            bg=VERMELHO
-        )
-
-    def sair_sair(event):
-
-        botao_sair.config(
-            bg="#251018"
-        )
-
-    botao_sair.bind(
-        "<Enter>",
-        hover_sair
+    card.pack(
+        side="left",
+        padx=10
     )
 
-    botao_sair.bind(
-        "<Leave>",
-        sair_sair
-    )
-
-    # --------------------------------------
-    # RODAPÉ
-    # --------------------------------------
+    card.pack_propagate(False)
 
     tk.Label(
-        janela,
-        text="ATM SYSTEM // SECURE CONNECTION // SENAI",
-        font=(
-            "Consolas",
-            8
-        ),
-        fg=CINZA,
-        bg=FUNDO
+        card,
+        text=numero,
+        bg=CARD,
+        fg=ROXO_CLARO,
+        font=("Arial", 9, "bold")
     ).pack(
-        pady=(0, 10)
+        anchor="w",
+        padx=20,
+        pady=(15, 0)
+    )
+
+    tk.Label(
+        card,
+        text=texto,
+        bg=CARD,
+        fg=BRANCO,
+        font=("Arial", 11, "bold")
+    ).pack(
+        anchor="w",
+        padx=20,
+        pady=3
+    )
+
+    tk.Button(
+        card,
+        text="ACESSAR",
+        command=comando,
+        bg=CARD,
+        fg=ROXO_CLARO,
+        activebackground=CARD,
+        activeforeground=BRANCO,
+        relief="flat",
+        bd=0,
+        cursor="hand2",
+        font=("Arial", 8, "bold")
+    ).pack(
+        anchor="w",
+        padx=15
     )
 
 
-# ==========================================
+# ---------------------------------------------------------
 # CONSULTAR SALDO
-# ==========================================
+
 
 def consultar_saldo():
 
     messagebox.showinfo(
-        "BALANCE",
-        f"CURRENT BALANCE\n\n"
-        f"R$ {saldo},00"
+        "Saldo",
+        "Conta: " + conta_atual +
+        "\n\nSaldo atual:\nR$ {:.2f}".format(
+            saldo
+        ).replace(".", ",")
     )
 
 
-# ==========================================
-# SAQUE
-# ==========================================
+# ---------------------------------------------------------
+# TELA DE SAQUE
+
+def tela_saque():
+
+    global entrada_saque
+
+    limpar_tela()
+
+    tk.Label(
+        janela,
+        text="Saque de dinheiro",
+        bg=FUNDO,
+        fg=BRANCO,
+        font=("Arial", 25, "bold")
+    ).pack(
+        pady=(70, 5)
+    )
+
+    tk.Label(
+        janela,
+        text="Digite o valor que deseja retirar",
+        bg=FUNDO,
+        fg=CINZA,
+        font=("Arial", 10)
+    ).pack()
+
+    card = tk.Frame(
+        janela,
+        bg=CARD,
+        width=450,
+        height=230
+    )
+
+    card.pack(
+        pady=30
+    )
+
+    card.pack_propagate(False)
+
+    tk.Label(
+        card,
+        text="VALOR DO SAQUE",
+        bg=CARD,
+        fg=CINZA,
+        font=("Arial", 9, "bold")
+    ).pack(
+        pady=(35, 5)
+    )
+
+    entrada_saque = criar_entrada(
+        card,
+        25
+    )
+
+    entrada_saque.pack()
+
+    tk.Label(
+        card,
+        text="Somente números inteiros",
+        bg=CARD,
+        fg=CINZA,
+        font=("Arial", 8)
+    ).pack(
+        pady=5
+    )
+
+    tk.Button(
+        card,
+        text="CONFIRMAR SAQUE",
+        command=sacar,
+        width=25,
+        height=2,
+        bg=ROXO,
+        fg=BRANCO,
+        activebackground=ROXO_ESCURO,
+        activeforeground=BRANCO,
+        relief="flat",
+        bd=0,
+        cursor="hand2",
+        font=("Arial", 9, "bold")
+    ).pack(
+        pady=15
+    )
+
+    criar_botao(
+        janela,
+        "← VOLTAR",
+        tela_menu,
+        15
+    ).pack()
+
+
+# ---------------------------------------------------------
+# REALIZAR SAQUE
 
 def sacar():
 
     global saldo
 
-    valor = simpledialog.askinteger(
-        "WITHDRAW",
-        "Digite o valor que deseja sacar:",
-        parent=janela,
-        minvalue=1
-    )
+    valor_texto = entrada_saque.get().strip()
 
-    if valor is None:
+    if valor_texto == "":
+        messagebox.showerror(
+            "Erro",
+            "Digite o valor do saque."
+        )
+        return
+
+    if "." in valor_texto or "," in valor_texto:
+        messagebox.showerror(
+            "Erro",
+            "Somente valores inteiros são aceitos."
+        )
+        return
+
+    try:
+        valor = int(valor_texto)
+
+    except ValueError:
+        messagebox.showerror(
+            "Erro",
+            "Digite um valor inteiro válido."
+        )
+        return
+
+    if valor <= 0:
+        messagebox.showerror(
+            "Erro",
+            "O valor deve ser maior que zero."
+        )
         return
 
     if valor > saldo:
-
         messagebox.showerror(
-            "INSUFFICIENT BALANCE",
-            "O valor solicitado é maior "
-            "que o saldo disponível."
+            "Erro",
+            "Saldo insuficiente."
         )
-
         return
 
-    cedulas = calcular_cedulas(
-        valor
-    )
+    cedulas = calcular_cedulas(valor)
 
     if cedulas is None:
 
         messagebox.showerror(
-            "INVALID VALUE",
-            "Não é possível formar esse valor "
-            "com as cédulas disponíveis.\n\n"
-            "R$ 100 • R$ 50 • R$ 20\n"
-            "R$ 10 • R$ 5 • R$ 2"
+            "Erro",
+            "Esse valor não pode ser formado pelas "
+            "cédulas disponíveis.\n\n"
+            "R$ 100 | R$ 50 | R$ 20 | "
+            "R$ 10 | R$ 5 | R$ 2"
         )
 
         return
 
-    saldo -= valor
+    mensagem = "SAQUE REALIZADO\n\n"
+    mensagem += "Cédulas entregues:\n\n"
 
-    texto = (
-        "WITHDRAW COMPLETED\n\n"
-        f"Valor: R$ {valor},00\n\n"
-    )
+    for cedula in CEDULAS:
 
-    texto += mostrar_cedulas(
-        cedulas
-    )
+        if cedula in cedulas:
 
-    texto += (
-        f"\nSaldo restante: "
-        f"R$ {saldo},00"
+            quantidade = cedulas[cedula]
+
+            if quantidade == 1:
+
+                mensagem += (
+                    "1 cédula de R$ {}\n"
+                    .format(cedula)
+                )
+
+            else:
+
+                mensagem += (
+                    "{} cédulas de R$ {}\n"
+                    .format(
+                        quantidade,
+                        cedula
+                    )
+                )
+
+    saldo = saldo - valor
+
+    mensagem += (
+        "\nNovo saldo: R$ {:.2f}"
+        .format(saldo)
+        .replace(".", ",")
     )
 
     messagebox.showinfo(
-        "WITHDRAW",
-        texto
+        "Saque",
+        mensagem
     )
 
     tela_menu()
 
 
-# ==========================================
-# DEPÓSITO
-# ==========================================
+# ---------------------------------------------------------
+# TELA DE DEPÓSITO
+
+def tela_deposito():
+
+    global entrada_deposito
+
+    limpar_tela()
+
+    tk.Label(
+        janela,
+        text="Depósito",
+        bg=FUNDO,
+        fg=BRANCO,
+        font=("Arial", 25, "bold")
+    ).pack(
+        pady=(70, 5)
+    )
+
+    tk.Label(
+        janela,
+        text="Digite o valor que deseja depositar",
+        bg=FUNDO,
+        fg=CINZA,
+        font=("Arial", 10)
+    ).pack()
+
+    card = tk.Frame(
+        janela,
+        bg=CARD,
+        width=450,
+        height=230
+    )
+
+    card.pack(
+        pady=30
+    )
+
+    card.pack_propagate(False)
+
+    tk.Label(
+        card,
+        text="VALOR DO DEPÓSITO",
+        bg=CARD,
+        fg=CINZA,
+        font=("Arial", 9, "bold")
+    ).pack(
+        pady=(35, 5)
+    )
+
+    entrada_deposito = criar_entrada(
+        card,
+        25
+    )
+
+    entrada_deposito.pack()
+
+    tk.Label(
+        card,
+        text="Somente números inteiros",
+        bg=CARD,
+        fg=CINZA,
+        font=("Arial", 8)
+    ).pack(
+        pady=5
+    )
+
+    tk.Button(
+        card,
+        text="CONFIRMAR DEPÓSITO",
+        command=depositar,
+        width=25,
+        height=2,
+        bg=ROXO,
+        fg=BRANCO,
+        activebackground=ROXO_ESCURO,
+        activeforeground=BRANCO,
+        relief="flat",
+        bd=0,
+        cursor="hand2",
+        font=("Arial", 9, "bold")
+    ).pack(
+        pady=15
+    )
+
+    criar_botao(
+        janela,
+        "← VOLTAR",
+        tela_menu,
+        15
+    ).pack()
+
+
+# ---------------------------------------------------------
+# REALIZAR DEPÓSITO
 
 def depositar():
 
     global saldo
 
-    valor = simpledialog.askinteger(
-        "DEPOSIT",
-        "Digite o valor que deseja depositar:",
-        parent=janela,
-        minvalue=1
-    )
+    valor_texto = entrada_deposito.get().strip()
 
-    if valor is None:
+    if valor_texto == "":
+        messagebox.showerror(
+            "Erro",
+            "Digite o valor do depósito."
+        )
         return
 
-    saldo += valor
+    if "." in valor_texto or "," in valor_texto:
+        messagebox.showerror(
+            "Erro",
+            "Somente valores inteiros são aceitos."
+        )
+        return
+
+    try:
+        valor = int(valor_texto)
+
+    except ValueError:
+        messagebox.showerror(
+            "Erro",
+            "Digite um valor inteiro válido."
+        )
+        return
+
+    if valor <= 0:
+        messagebox.showerror(
+            "Erro",
+            "O valor deve ser maior que zero."
+        )
+        return
+
+    saldo = saldo + valor
 
     messagebox.showinfo(
-        "DEPOSIT COMPLETED",
-        "DEPÓSITO CONCLUÍDO!\n\n"
-        f"Valor: R$ {valor},00\n\n"
-        f"Novo saldo: R$ {saldo},00"
+        "Depósito",
+        "Depósito realizado!\n\n"
+        "Valor: R$ {:.2f}\n"
+        "Novo saldo: R$ {:.2f}".format(
+            valor,
+            saldo
+        ).replace(".", ",")
     )
 
     tela_menu()
 
 
-# ==========================================
+# ---------------------------------------------------------
 # SAIR
-# ==========================================
 
 def sair():
 
     salvar_saldo(
-        conta,
+        conta_atual,
         saldo
     )
 
-    resposta = messagebox.askyesno(
-        "TERMINATE SESSION",
-        "O saldo foi salvo com sucesso.\n\n"
-        "Deseja realmente encerrar?"
+    messagebox.showinfo(
+        "MIT ATM",
+        "Saldo salvo com sucesso.\n\n"
+        "Sessão encerrada."
     )
 
-    if resposta:
-
-        janela.destroy()
-
-    else:
-
-        tela_menu()
+    janela.destroy()
 
 
-# ==========================================
-# INICIAR
-# ==========================================
+# ---------------------------------------------------------
+# PROGRAMA PRINCIPAL
+
+
+janela = tk.Tk()
+
+janela.title(
+    "MIT ATM"
+)
+
+janela.geometry(
+    "850x600"
+)
+
+janela.resizable(
+    False,
+    False
+)
+
+janela.configure(
+    bg=FUNDO
+)
 
 tela_login()
 
