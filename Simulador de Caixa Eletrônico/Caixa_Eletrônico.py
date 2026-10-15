@@ -2,17 +2,17 @@ import tkinter as tk
 from tkinter import messagebox
 import os
 
-# Arquivo onde os saldos serão salvos
+# Nome do arquivo que vai guardar as contas e os saldos
 ARQUIVO = "contas.txt"
 
-# Saldo inicial para contas novas
+# Toda conta nova começa com mil reais
 SALDO_INICIAL = 1000
 
-# Cédulas disponíveis no caixa
+# Notas que o caixa consegue entregar
 CEDULAS = [100, 50, 20, 10, 5, 2]
 
 
-# Cores do sistema
+# Cores usadas nas telas do programa
 FUNDO = "#0D0914"
 CARD = "#171020"
 CARD_2 = "#21152E"
@@ -26,18 +26,15 @@ CINZA = "#9B91A8"
 VERMELHO = "#FF5577"
 
 
-# Variáveis da conta atual
+# Guarda os dados da conta que está sendo usada
 conta_atual = ""
 saldo = 0
 
 
-# ---------------------------------------------------------
-# CARREGAR SALDO
-# ---------------------------------------------------------
-
+# Procura o saldo da conta no arquivo
 def carregar_saldo(conta):
-    """Busca o saldo da conta no arquivo."""
 
+    # Se o arquivo ainda não existe, usa o saldo inicial
     if not os.path.exists(ARQUIVO):
         return SALDO_INICIAL
 
@@ -49,24 +46,23 @@ def carregar_saldo(conta):
         if linha != "":
             dados = linha.split(";")
 
+            # Confere se a conta da linha é a mesma que foi digitada
             if len(dados) == 2 and dados[0] == conta:
                 arquivo.close()
                 return int(dados[1])
 
     arquivo.close()
 
+    # Se a conta não estiver salva, começa com mil reais
     return SALDO_INICIAL
 
 
-# ---------------------------------------------------------
-# SALVAR SALDO
-# ---------------------------------------------------------
-
+# Salva o saldo atualizado sem apagar as outras contas
 def salvar_saldo(conta, novo_saldo):
-    """Salva o saldo da conta no arquivo."""
 
     contas = []
 
+    # Se já existe um arquivo, lê as contas que estão salvas
     if os.path.exists(ARQUIVO):
         arquivo = open(ARQUIVO, "r", encoding="utf-8")
 
@@ -78,17 +74,20 @@ def salvar_saldo(conta, novo_saldo):
 
                 if len(dados) == 2:
 
+                    # Atualiza o saldo da conta que está sendo usada
                     if dados[0] == conta:
                         contas.append(
                             conta + ";" + str(novo_saldo)
                         )
                     else:
+                        # Mantém os dados das outras contas
                         contas.append(
                             dados[0] + ";" + dados[1]
                         )
 
         arquivo.close()
 
+    # Verifica se a conta já estava salva
     conta_encontrada = False
 
     for linha in contas:
@@ -98,11 +97,13 @@ def salvar_saldo(conta, novo_saldo):
             conta_encontrada = True
             break
 
+    # Se for uma conta nova, adiciona ela ao arquivo
     if not conta_encontrada:
         contas.append(
             conta + ";" + str(novo_saldo)
         )
 
+    # Escreve os dados atualizados no arquivo
     arquivo = open(ARQUIVO, "w", encoding="utf-8")
 
     for linha in contas:
@@ -111,10 +112,7 @@ def salvar_saldo(conta, novo_saldo):
     arquivo.close()
 
 
-# ---------------------------------------------------------
-# CALCULAR CÉDULAS
-# ---------------------------------------------------------
-
+# Calcula quantas notas serão usadas no saque
 def calcular_cedulas(valor):
 
     cedulas_entregues = {}
@@ -123,38 +121,38 @@ def calcular_cedulas(valor):
 
     indice = 0
 
+    # Vai testando as notas da maior para a menor
     while valor_restante > 0 and indice < len(CEDULAS):
 
         cedula = CEDULAS[indice]
 
+        # Descobre quantas notas desse valor podem ser usadas
         quantidade = valor_restante // cedula
 
         if quantidade > 0:
 
             cedulas_entregues[cedula] = quantidade
 
+            # Atualiza o valor que ainda falta entregar
             valor_restante = valor_restante % cedula
 
         indice += 1
 
-    # Se sobrou algum valor,
-    # significa que o caixa não consegue formar o valor.
+    # Se sobrar algum valor, não dá para fazer esse saque
     if valor_restante != 0:
         return None
 
     return cedulas_entregues
 
 
-# ---------------------------------------------------------
-# FUNÇÕES DA INTERFACE
-# ---------------------------------------------------------
-
+# Apaga os elementos da tela antes de abrir outra
 def limpar_tela():
 
     for widget in janela.winfo_children():
         widget.destroy()
 
 
+# Cria os botões com o mesmo estilo
 def criar_botao(pai, texto, comando, largura=20):
 
     return tk.Button(
@@ -174,6 +172,7 @@ def criar_botao(pai, texto, comando, largura=20):
     )
 
 
+# Cria os campos onde o usuário digita as informações
 def criar_entrada(pai, largura=30):
 
     return tk.Entry(
@@ -188,9 +187,7 @@ def criar_entrada(pai, largura=30):
     )
 
 
-# ---------------------------------------------------------
-# LOGIN
-
+# Pega os dados digitados e abre a conta
 def entrar():
 
     global conta_atual
@@ -213,19 +210,16 @@ def entrar():
         )
         return
 
-    # A senha não precisa ser validada,
-    # conforme o enunciado do trabalho.
-
+    # A senha só é solicitada, não precisa ser conferida
     conta_atual = conta
 
+    # Carrega o saldo que já estiver salvo para essa conta
     saldo = carregar_saldo(conta_atual)
 
     tela_menu()
 
 
-# ---------------------------------------------------------
-# TELA DE LOGIN
-
+# Monta a primeira tela do sistema
 def tela_login():
 
     global entrada_conta
@@ -357,9 +351,7 @@ def tela_login():
     )
 
 
-# ---------------------------------------------------------
-# MENU PRINCIPAL
-
+# Mostra as opções disponíveis depois do login
 def tela_menu():
 
     global label_saldo
@@ -532,9 +524,7 @@ def tela_menu():
     )
 
 
-# ---------------------------------------------------------
-# CARDS DE OPERAÇÃO
-
+# Cria os cards das opções do menu
 def criar_card_operacao(
     pai,
     numero,
@@ -598,10 +588,7 @@ def criar_card_operacao(
     )
 
 
-# ---------------------------------------------------------
-# CONSULTAR SALDO
-
-
+# Mostra o saldo da conta em uma janela
 def consultar_saldo():
 
     messagebox.showinfo(
@@ -613,9 +600,7 @@ def consultar_saldo():
     )
 
 
-# ---------------------------------------------------------
-# TELA DE SAQUE
-
+# Monta a tela para digitar o valor do saque
 def tela_saque():
 
     global entrada_saque
@@ -706,9 +691,7 @@ def tela_saque():
     ).pack()
 
 
-# ---------------------------------------------------------
-# REALIZAR SAQUE
-
+# Confere o valor e faz o saque
 def sacar():
 
     global saldo
@@ -722,6 +705,7 @@ def sacar():
         )
         return
 
+    # Não aceita valores com casas decimais
     if "." in valor_texto or "," in valor_texto:
         messagebox.showerror(
             "Erro",
@@ -746,6 +730,7 @@ def sacar():
         )
         return
 
+    # Confere se tem dinheiro suficiente na conta
     if valor > saldo:
         messagebox.showerror(
             "Erro",
@@ -753,6 +738,7 @@ def sacar():
         )
         return
 
+    # Confere se o caixa consegue entregar esse valor
     cedulas = calcular_cedulas(valor)
 
     if cedulas is None:
@@ -770,6 +756,7 @@ def sacar():
     mensagem = "SAQUE REALIZADO\n\n"
     mensagem += "Cédulas entregues:\n\n"
 
+    # Monta a lista das notas que serão entregues
     for cedula in CEDULAS:
 
         if cedula in cedulas:
@@ -793,6 +780,7 @@ def sacar():
                     )
                 )
 
+    # Desconta o valor retirado do saldo
     saldo = saldo - valor
 
     mensagem += (
@@ -809,9 +797,7 @@ def sacar():
     tela_menu()
 
 
-# ---------------------------------------------------------
-# TELA DE DEPÓSITO
-
+# Monta a tela para fazer um depósito
 def tela_deposito():
 
     global entrada_deposito
@@ -902,9 +888,7 @@ def tela_deposito():
     ).pack()
 
 
-# ---------------------------------------------------------
-# REALIZAR DEPÓSITO
-
+# Confere o valor e adiciona o depósito ao saldo
 def depositar():
 
     global saldo
@@ -918,6 +902,7 @@ def depositar():
         )
         return
 
+    # Impede que sejam digitados valores fracionários
     if "." in valor_texto or "," in valor_texto:
         messagebox.showerror(
             "Erro",
@@ -942,6 +927,7 @@ def depositar():
         )
         return
 
+    # Soma o depósito ao saldo atual
     saldo = saldo + valor
 
     messagebox.showinfo(
@@ -957,9 +943,7 @@ def depositar():
     tela_menu()
 
 
-# ---------------------------------------------------------
-# SAIR
-
+# Salva o saldo e fecha o sistema
 def sair():
 
     salvar_saldo(
@@ -976,10 +960,7 @@ def sair():
     janela.destroy()
 
 
-# ---------------------------------------------------------
-# PROGRAMA PRINCIPAL
-
-
+# Cria a janela principal do programa
 janela = tk.Tk()
 
 janela.title(
@@ -999,6 +980,7 @@ janela.configure(
     bg=FUNDO
 )
 
+# Abre o login e mantém a janela funcionando
 tela_login()
 
 janela.mainloop()
