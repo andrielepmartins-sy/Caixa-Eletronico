@@ -153,4 +153,3 @@ Projeto desenvolvido durante os estudos de **Desenvolvimento de Sistemas no SENA
 
 **Python + Tkinter + lógica de programação**
 
-testesss

@@ -1,0 +1,3 @@
+345;19/10/2026 20:59:41;Conta criada;1000;Saldo inicial
+345;19/10/2026 20:59:53;Saque;54;1 cédula(s) de R$ 50 2 cédula(s) de R$ 2 
+345;19/10/2026 20:59:56;Depósito;454353454;
