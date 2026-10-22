@@ -1,73 +1,70 @@
-
-# Importa as bibliotecas utilizadas
 import tkinter as tk
 from tkinter import messagebox
 import os
 from datetime import datetime
 
-# Arquivos para salvar os dados
+# Arquivos usados para guardar as contas e o extrato
 arquivo = "contas.txt"
 arquivo_extrato = "extrato.txt"
 
-# Saldo inicial de contas novas
+# Saldo inicial de uma conta nova
 saldo = 1000
 
-# Conta que está sendo utilizada
+#conta que está sendo usada no momento
 conta = ""
 
-# Cédulas disponíveis no caixa
+#Cédulas que o caixa pode entregar
 cedulas = [100, 50, 20, 10, 5, 2]
 
-# Cores da interface
+#cores da interface
 fundo = "#F2F2F2"
 azul = "#4A83B8"
 azul_claro = "#D9E6F2"
 texto_cor = "#263746"
 verde = "#26734D"
 
-# Lista de contas cadastradas
+# Contas que foram carregadas do arquivo
 contas = {}
 
-
-# ==========================================
-# CARREGAR AS CONTAS DO ARQUIVO
-# ==========================================
+# ---------------- CARREGAR CONTAS ----------------
 
 def carregar_contas():
     global contas
 
     contas = {}
 
+    # Só abre o arquivo se ele já existir
     if os.path.exists(arquivo):
         with open(arquivo, "r", encoding="utf-8") as f:
             for linha in f:
                 dados = linha.strip().split(";")
 
-                if len(dados) == 3:
+                if len(dados) == 3:  #campos
                     numero = dados[0]
                     senha = dados[1]
 
                     try:
-                        valor = int(dados[2])
+                        #transforma o saldo em número
+                        valor = int(dados[2])  #converte o saldo de texto para número inteiro
 
+                        # Guarda a senha e o saldo da conta
                         contas[numero] = {
                             "senha": senha,
                             "saldo": valor
                         }
+
                     except ValueError:
+                        # Pula a linha se o saldo estiver inválido
                         continue
 
-
-# ==========================================
-# SALVAR AS CONTAS NO ARQUIVO
-# ==========================================
+# ---------------- SALVAR CONTAS ----------------
 
 def salvar_saldo():
     # Atualiza o saldo da conta atual
     if conta in contas:
         contas[conta]["saldo"] = saldo
 
-    # Salva todas as contas cadastradas
+    # Salva todas as contas no arquivo
     with open(arquivo, "w", encoding="utf-8") as f:
         for numero, dados in contas.items():
             f.write(
@@ -76,15 +73,13 @@ def salvar_saldo():
                 + str(dados["saldo"]) + "\n"
             )
 
-
-# ==========================================
-# REGISTRAR UMA OPERAÇÃO NO EXTRATO
-# ==========================================
+#----------------REGISTRAR OPERAÇÕES -------------
 
 def registrar_operacao(tipo, valor, detalhes=""):
     data = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
-    with open(arquivo_extrato, "a", encoding="utf-8") as f:
+    # Adiciona a operação ao final do extrato
+    with open(arquivo_extrato, "a", encoding="utf-8") as f:  # lembrete: O modo "a" significa append: adiciona conteúdo ao final do arquivo sem apagar as movimentações anteriores
         f.write(
             conta + ";"
             + data + ";"
@@ -95,11 +90,10 @@ def registrar_operacao(tipo, valor, detalhes=""):
         )
 
 
-# ==========================================
-# FORMATAR VALORES EM REAIS
-# ==========================================
+# ---------------- FORMATAR VALORES ----------------
 
 def formatar_dinheiro(valor):
+
     texto = f"{valor:,.2f}"
     texto = texto.replace(",", "X")
     texto = texto.replace(".", ",")
@@ -108,11 +102,10 @@ def formatar_dinheiro(valor):
     return "R$ " + texto
 
 
-# ==========================================
-# FUNÇÕES PARA CRIAR ELEMENTOS DA INTERFACE
-# ==========================================
+# ---------------- CRIAR TÍTULOS E BOTÕES ----------------
 
 def criar_titulo(texto, tamanho=14):
+
     return tk.Label(
         janela,
         text=texto,
@@ -138,18 +131,15 @@ def criar_botao(texto, comando):
     )
 
 
-# ==========================================
-# FUNÇÃO PARA LIMPAR A TELA
-# ==========================================
+# ---------------- LIMPAR A TELA ----------------
 
 def limpar():
+    # Apaga os elementos da tela antes de abrir outra
     for item in janela.winfo_children():
         item.destroy()
 
 
-# ==========================================
-# ENTRAR NO SISTEMA
-# ==========================================
+# ---------------- ENTRAR NO SISTEMA ----------------
 
 def entrar():
     global conta, saldo
@@ -157,40 +147,40 @@ def entrar():
     numero = campo_conta.get().strip()
     senha = campo_senha.get()
 
-    # Verifica se os campos estão preenchidos
+    # confere se os campos foram preenchidos
     if numero == "" or senha == "":
         messagebox.showerror(
             "Erro",
-            "Preencha a conta e a senha."
+            "Preencha a conta e a senha!"
         )
         return
 
-    # Verifica se o número da conta contém apenas números
+    # Aceita apenas números no campo da conta
     if not numero.isdigit():
         messagebox.showerror(
             "Erro",
-            "O número da conta deve conter apenas números."
+            "O número da conta deve conter apenas números!"
         )
         return
 
-    # Atualiza a lista de contas
+    # Carrega as contas salvas para conferir o login
     carregar_contas()
 
-    # Verifica se a conta já existe
+    # Se a conta existe, confere a senha
     if numero in contas:
         if contas[numero]["senha"] != senha:
             messagebox.showerror(
                 "Erro",
-                "Senha incorreta."
+                "Senha incorreta!"
             )
             return
 
-        # Recupera o saldo salvo
+        #Recupera os dados da conta
         conta = numero
         saldo = contas[conta]["saldo"]
 
     else:
-        # Cria uma conta nova
+        # Cria uma conta nova com saldo de R$ 1.000
         conta = numero
         saldo = 1000
 
@@ -200,25 +190,17 @@ def entrar():
         }
 
         salvar_saldo()
-
-        registrar_operacao(
-            "Conta criada",
-            1000,
-            "Saldo inicial"
-        )
+        registrar_operacao("Conta criada", 1000, "Saldo inicial")
 
         messagebox.showinfo(
             "Conta criada",
             "Sua conta foi criada com saldo inicial de R$ 1.000,00."
         )
 
-    # Abre o menu principal
+    # Depois do login, abre o menu
     menu()
 
-
-# ==========================================
-# CONSULTAR SALDO
-# ==========================================
+# ---------------- CONSULTAR SALDO ----------------
 
 def consultar():
     messagebox.showinfo(
@@ -229,10 +211,7 @@ def consultar():
     )
 
 
-# ==========================================
-# TELA DE DEPÓSITO
-# ==========================================
-
+# ---------------- TELA DE DEPÓSITO ----------------
 def tela_deposito():
     limpar()
 
@@ -259,7 +238,7 @@ def tela_deposito():
 
         texto = campo_valor.get().strip()
 
-        # Aceita apenas números inteiros positivos
+        # Verifica se foi digitado um número inteiro
         if not texto.isdigit():
             messagebox.showerror(
                 "Erro",
@@ -276,7 +255,7 @@ def tela_deposito():
             )
             return
 
-        # Adiciona o valor ao saldo
+        # Soma o depósito ao saldo da conta
         saldo += valor
 
         salvar_saldo()
@@ -301,23 +280,21 @@ def tela_deposito():
     ).pack(pady=5)
 
 
-# ==========================================
-# CALCULAR AS CÉDULAS DO SAQUE
-# ==========================================
+# ---------------- CALCULAR CÉDULAS DO SAQUE ----------------
 
 def calcular_cedulas(valor):
     # Guarda a menor quantidade de cédulas para cada valor
     melhor = [None] * (valor + 1)
 
-    # Guarda a cédula utilizada em cada etapa
+    #Anota qual cédula foi usada para formar cada valor
     anterior = [None] * (valor + 1)
 
     melhor[0] = 0
 
-    # Procura uma combinação para formar o valor
+    # Tenta formar os valores usando as cédulas disponíveis
     for quantia in range(1, valor + 1):
         for cedula in cedulas:
-
+             
             if quantia >= cedula:
                 anterior_valor = melhor[quantia - cedula]
 
@@ -331,27 +308,23 @@ def calcular_cedulas(valor):
                         melhor[quantia] = tentativa
                         anterior[quantia] = cedula
 
-    # Verifica se foi encontrada uma combinação
+    # Se não encontrou uma combinação, o saque não é possível
     if melhor[valor] is None:
         return None
 
-    # Monta a lista de cédulas utilizadas
+    # Monta a lista com as cédulas que serão usadas
     resultado = {}
     restante = valor
 
     while restante > 0:
         cedula = anterior[restante]
-
         resultado[cedula] = resultado.get(cedula, 0) + 1
         restante -= cedula
 
     return resultado
 
 
-# ==========================================
-# TELA DE SAQUE
-# ==========================================
-
+# ---------------- TELA DE SAQUE ----------------
 def tela_saque():
     limpar()
 
@@ -386,6 +359,7 @@ def tela_saque():
 
         texto = campo_valor.get().strip()
 
+        # Confere se o valor digitado é um número inteiro
         if not texto.isdigit():
             messagebox.showerror(
                 "Erro",
@@ -402,6 +376,7 @@ def tela_saque():
             )
             return
 
+        # Verifica se há dinheiro suficiente na conta
         if valor > saldo:
             messagebox.showerror(
                 "Erro",
@@ -409,7 +384,7 @@ def tela_saque():
             )
             return
 
-        # Evita cálculos muito grandes
+        # Limita o valor para evitar cálculos muito grandes
         if valor > 100000:
             messagebox.showerror(
                 "Erro",
@@ -417,7 +392,7 @@ def tela_saque():
             )
             return
 
-        # Calcula a combinação de cédulas
+        # Descobre quais cédulas podem formar o valor
         resultado = calcular_cedulas(valor)
 
         if resultado is None:
@@ -428,7 +403,7 @@ def tela_saque():
             )
             return
 
-        # Monta o texto com as cédulas
+        # Prepara a mensagem com as cédulas do saque
         mensagem = ""
 
         for cedula in sorted(resultado, reverse=True):
@@ -441,7 +416,7 @@ def tela_saque():
                 + "\n"
             )
 
-        # Confirma o saque antes de descontar o saldo
+        # Confirma o saque antes de descontar o dinheiro
         confirmar_saque = messagebox.askyesno(
             "Confirmar saque",
             "Valor: " + formatar_dinheiro(valor)
@@ -452,7 +427,7 @@ def tela_saque():
         if not confirmar_saque:
             return
 
-        # Desconta o valor do saldo
+        # Desconta o valor e salva o novo saldo
         saldo -= valor
 
         salvar_saldo()
@@ -477,10 +452,7 @@ def tela_saque():
     ).pack(pady=5)
 
 
-# ==========================================
-# CONSULTAR O EXTRATO
-# ==========================================
-
+# ---------------- CONSULTAR EXTRATO ----------------
 def tela_extrato():
     limpar()
 
@@ -501,7 +473,7 @@ def tela_extrato():
         font=("Arial", 11, "bold")
     ).pack(pady=3)
 
-    # Cria a área que mostra as movimentações
+    # Cria a área onde as movimentações vão aparecer
     quadro = tk.Frame(janela, bg=fundo)
     quadro.pack(fill="both", expand=True, padx=15, pady=10)
 
@@ -518,17 +490,11 @@ def tela_extrato():
         command=lista.yview
     )
     rolagem.pack(side="right", fill="y")
-
     lista.config(yscrollcommand=rolagem.set)
 
-    # Procura as movimentações da conta atual
+    # Procura no arquivo as operações da conta atual
     if os.path.exists(arquivo_extrato):
-        with open(
-            arquivo_extrato,
-            "r",
-            encoding="utf-8"
-        ) as f:
-
+        with open(arquivo_extrato, "r", encoding="utf-8") as f:
             for linha in f:
                 dados = linha.strip().split(";", 4)
 
@@ -546,10 +512,7 @@ def tela_extrato():
                     lista.insert(tk.END, texto)
 
                     if len(dados) == 5 and dados[4]:
-                        lista.insert(
-                            tk.END,
-                            "   " + dados[4]
-                        )
+                        lista.insert(tk.END, "   " + dados[4])
 
     criar_botao(
         "Voltar ao menu",
@@ -557,10 +520,7 @@ def tela_extrato():
     ).pack(pady=(0, 15))
 
 
-# ==========================================
-# MOSTRAR O MENU PRINCIPAL
-# ==========================================
-
+# ---------------- MENU PRINCIPAL ----------------
 def menu():
     limpar()
 
@@ -616,10 +576,7 @@ def menu():
     ).pack(pady=(12, 5))
 
 
-# ==========================================
-# SALVAR E ENCERRAR O PROGRAMA
-# ==========================================
-
+# ---------------- SAIR DO PROGRAMA ----------------
 def sair():
     salvar_saldo()
 
@@ -631,24 +588,18 @@ def sair():
     janela.destroy()
 
 
-# ==========================================
-# CRIAR A JANELA PRINCIPAL
-# ==========================================
-
+# ---------------- JANELA PRINCIPAL ----------------
 janela = tk.Tk()
 janela.title("Caixa Eletrônico")
 janela.geometry("450x500")
 janela.configure(bg=fundo)
 janela.resizable(False, False)
 
-# Carrega as contas que já foram salvas
+# Carrega as contas salvas ao abrir o programa
 carregar_contas()
 
 
-# ==========================================
-# TELA DE LOGIN
-# ==========================================
-
+# ---------------- TELA DE LOGIN ----------------
 criar_titulo("Bem-vindo!", 18).pack(pady=(35, 5))
 
 tk.Label(
@@ -659,7 +610,7 @@ tk.Label(
     fg="#555555"
 ).pack(pady=(0, 20))
 
-# Campo para digitar a conta
+# Campo para digitar o número da conta
 tk.Label(
     janela,
     text="Número da conta",
@@ -692,7 +643,7 @@ campo_senha = tk.Entry(
 )
 campo_senha.pack(pady=(5, 18), ipady=4)
 
-# Botão para entrar no sistema
+# Chama a função de login quando o botão é clicado
 tk.Button(
     janela,
     text="Entrar",
@@ -708,7 +659,7 @@ tk.Button(
     pady=7
 ).pack()
 
-# Permite apertar Enter para entrar
+# Também permite entrar apertando Enter
 janela.bind("<Return>", lambda evento: entrar())
 
 # Mantém a janela aberta
