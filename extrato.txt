@@ -1,3 +1,6 @@
 345;19/10/2026 20:59:41;Conta criada;1000;Saldo inicial
 345;19/10/2026 20:59:53;Saque;54;1 cédula(s) de R$ 50 2 cédula(s) de R$ 2 
 345;19/10/2026 20:59:56;Depósito;454353454;
+5443;26/10/2026 19:40:25;Conta criada;1000;Saldo inicial
+5443;26/10/2026 19:40:37;Saque;435;4 cédula(s) de R$ 100 1 cédula(s) de R$ 20 1 cédula(s) de R$ 10 1 cédula(s) de R$ 5 
+5443;26/10/2026 19:40:57;Depósito;98;
